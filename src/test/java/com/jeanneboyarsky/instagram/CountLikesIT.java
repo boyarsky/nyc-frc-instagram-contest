@@ -37,33 +37,32 @@ public class CountLikesIT {
 		// 3) edge_media_preview_like - looks same as #2
 		String json = getJson();
 
-		
 		ObjectMapper objectMapper = new ObjectMapper();
 		JsonNode rootNode = objectMapper.readTree(json);
 
 		List<JsonNode> nodes = rootNode.findValues("node");
-		
+
 		Map<String, Integer> result = nodes.stream()
-			// node occurs at multiple levels; we only want the ones that go with posts
-			.filter(this::isPost)
-			.collect(Collectors.toMap(this::getUrl, this::getNumLikes, 
-					// ignore duplicates by choosing either
-					(k, v) -> v));
-	
+				// node occurs at multiple levels; we only want the ones that go with posts
+				.filter(this::isPost)
+				.collect(Collectors.toMap(this::getUrl, this::getNumLikes,
+						// ignore duplicates by choosing either (top/featured posts appear twice)
+						(k, v) -> v));
+
 		printDescendingByLikes(result);
 
 	}
-	
+
 	private String getUrl(JsonNode node) {
 		JsonNode shortCodeNode = node.findValue("shortcode");
 		return "https://instagram.com/p/" + shortCodeNode.asText();
 	}
-	
+
 	private int getNumLikes(JsonNode node) {
 		JsonNode likeNode = node.get("edge_liked_by");
 		return likeNode.get("count").asInt();
 	}
-	
+
 	private boolean isPost(JsonNode node) {
 		return node.findValue("display_url") != null;
 	}
@@ -79,14 +78,13 @@ public class CountLikesIT {
 		String openTag = "<";
 		String closeTag = ">";
 		String anyCharactersInTag = "[^>]*";
-		
+
 		String regex = openTag + anyCharactersInTag + closeTag;
 		return pageSource.replaceAll(regex, "");
 	}
 
 	private void printDescendingByLikes(Map<String, Integer> result) {
-		Comparator<Entry<String, Integer>> comparator = 
-				Comparator.comparing((Entry<String, Integer> e) -> e.getValue())
+		Comparator<Entry<String, Integer>> comparator = Comparator.comparing((Entry<String, Integer> e) -> e.getValue())
 				.reversed();
 		result.entrySet().stream()
 				.sorted(comparator)
